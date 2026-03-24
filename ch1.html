@@ -1,0 +1,428 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>恐龙岛历险记 · 暴风雨来了</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --text-primary: #f5f0e8;
+    --accent-warm: #ff6b35;
+    --accent-blue: #4ecdc4;
+    --accent-yellow: #ffe66d;
+    --accent-green: #a8e06c;
+    --accent-red: #ff6b6b;
+    --science-bg: rgba(30, 60, 114, 0.95);
+    --quiz-bg: rgba(20, 80, 60, 0.95);
+  }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    font-family: 'ZCOOL KuaiLe', 'Ma Shan Zheng', sans-serif;
+    background: #0a0a1a;
+    touch-action: pan-y; -webkit-user-select: none; user-select: none;
+  }
+  .page {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: none; flex-direction: column; justify-content: center; align-items: center;
+    overflow: hidden;
+  }
+  .page.active { display: flex; }
+  .page-illustration {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    object-fit: cover; z-index: 1;
+  }
+  .content-bottom {
+    position: absolute; bottom: 8%; width: 100%;
+    display: flex; flex-direction: column; align-items: center; z-index: 10;
+  }
+  .content-center {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10;
+  }
+  .text-bubble {
+    max-width: 85%; padding: 1.2rem 1.5rem; border-radius: 20px;
+    font-size: clamp(1.1rem, 3vw, 1.5rem); line-height: 1.8;
+    text-align: center; margin: 0.5rem;
+  }
+  .text-bubble.narrator {
+    background: rgba(0, 0, 0, 0.75); color: var(--text-primary);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+  }
+  .text-bubble.character {
+    background: rgba(255, 107, 53, 0.85); color: white;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+  }
+  .text-bubble.grandpa {
+    background: rgba(100, 70, 40, 0.85); color: white;
+    border: 2px solid rgba(255, 255, 255, 0.2);
+  }
+  .science-panel {
+    max-width: 90%; padding: 1.5rem; border-radius: 20px;
+    background: var(--science-bg); color: var(--text-primary);
+    border: 2px solid rgba(78, 205, 196, 0.3);
+    font-size: clamp(1rem, 2.8vw, 1.3rem); line-height: 1.8;
+  }
+  .quiz-box {
+    max-width: 90%; padding: 1.5rem; border-radius: 20px;
+    background: var(--quiz-bg); color: var(--text-primary);
+  }
+  .quiz-question {
+    font-size: clamp(1.1rem, 3vw, 1.4rem); margin-bottom: 1rem;
+    text-align: center; line-height: 1.6;
+  }
+  .quiz-options { display: flex; flex-direction: column; gap: 0.8rem; }
+  .quiz-option {
+    padding: 0.8rem 1.2rem; border-radius: 16px; cursor: pointer;
+    font-family: inherit; font-size: clamp(1rem, 2.5vw, 1.3rem);
+    border: 3px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1);
+    color: var(--text-primary); text-align: center; transition: all 0.3s;
+  }
+  .quiz-option:active { transform: scale(0.97); }
+  .quiz-option.correct {
+    background: rgba(46, 204, 113, 0.3); border-color: #2ecc71;
+    animation: correctPulse 0.5s ease;
+  }
+  .quiz-option.wrong {
+    background: rgba(231, 76, 60, 0.3); border-color: #e74c3c;
+    animation: shake 0.5s ease;
+  }
+  .quiz-option.disabled { pointer-events: none; opacity: 0.5; }
+  .quiz-feedback { margin-top: 0.8rem; text-align: center; font-size: clamp(0.9rem, 2.5vw, 1.2rem); }
+  .reward-counter {
+    position: fixed; top: 1.5%; right: 1.5%; z-index: 200;
+    background: rgba(0,0,0,0.6); padding: 0.4rem 0.8rem;
+    border-radius: 20px; font-size: clamp(0.9rem, 2.5vw, 1.2rem);
+    color: var(--accent-yellow); border: 2px solid rgba(255,230,109,0.3);
+    transition: transform 0.3s;
+  }
+  .reward-counter.pulse { transform: scale(1.3); }
+  .nav-area {
+    position: fixed; top: 0; width: 15%; height: 100%; z-index: 50;
+    display: flex; align-items: center; cursor: pointer;
+  }
+  .nav-area.left { left: 0; justify-content: flex-start; }
+  .nav-area.right { right: 0; justify-content: flex-end; }
+  .nav-hint { font-size: 2rem; color: rgba(255,255,255,0.3); padding: 1rem; transition: color 0.3s; }
+  .nav-area:hover .nav-hint { color: rgba(255,255,255,0.7); }
+  .page-counter {
+    position: fixed; bottom: 1.5%; left: 50%; transform: translateX(-50%);
+    z-index: 100; display: flex; gap: 8px;
+  }
+  .page-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; }
+  .page-dot.active { background: var(--accent-yellow); transform: scale(1.3); }
+  .highlight { color: var(--accent-yellow); font-weight: bold; }
+  .highlight-blue { color: var(--accent-blue); }
+  .highlight-green { color: var(--accent-green); }
+  .highlight-red { color: var(--accent-red); }
+  .match-container { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: rgba(20, 60, 80, 0.95); color: var(--text-primary); }
+  .match-instruction { font-size: clamp(1rem, 2.8vw, 1.3rem); text-align: center; margin-bottom: 1rem; }
+  .match-grid { display: flex; justify-content: space-around; gap: 1rem; }
+  .match-left, .match-right { display: flex; flex-direction: column; gap: 0.6rem; }
+  .match-item { padding: 0.6rem 1rem; border-radius: 12px; border: 3px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); cursor: pointer; text-align: center; font-size: clamp(0.9rem, 2.5vw, 1.1rem); transition: all 0.3s; }
+  .match-item.selected { border-color: var(--accent-yellow); background: rgba(255,230,109,0.2); }
+  .match-item.matched { border-color: var(--accent-green); background: rgba(168,224,108,0.2); pointer-events: none; }
+  .match-item.wrong { border-color: var(--accent-red); animation: shake 0.5s ease; }
+  .ch-link { display: inline-block; margin-top: 0.5rem; padding: 0.8rem 2rem; background: var(--accent-warm); color: #fff; border-radius: 30px; text-decoration: none; font-size: 1.1em; transition: transform 0.2s; }
+  .ch-link:active { transform: scale(0.95); }
+  @keyframes correctPulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .fade-in { animation: fadeIn 0.6s ease forwards; }
+</style>
+</head>
+<body>
+
+<div class="reward-counter">🦴 × <span id="reward-count">0</span></div>
+<div class="nav-area left" onclick="prevPage()"><div class="nav-hint">‹</div></div>
+<div class="nav-area right" onclick="nextPage()"><div class="nav-hint">›</div></div>
+<div class="page-counter" id="page-counter"></div>
+
+<!-- Page 0: Cover -->
+<div class="page active" data-page="0" style="background: linear-gradient(180deg, #2d3436, #0a0a0a);">
+  <div class="content-center">
+    <div style="font-size: clamp(2.5rem, 7vw, 4rem); color: var(--accent-yellow); text-shadow: 2px 2px 10px rgba(0,0,0,0.5);">
+      ⛈️ 第一章
+    </div>
+    <div style="font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--text-primary); margin-top: 0.5rem;">
+      暴风雨来了
+    </div>
+    <div style="font-size: clamp(0.9rem, 2.5vw, 1.1rem); color: rgba(255,255,255,0.5); margin-top: 1rem;">
+      天气信号 · 闪电与雷声 · 气压变化
+    </div>
+  </div>
+</div>
+
+<!-- Page 1: Approaching the island -->
+<div class="page" data-page="1" style="background: linear-gradient(180deg, #1a3a5c, #0a1a2a);">
+  <img class="page-illustration" src="images/ch1-approaching-island.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      七岁的<span class="highlight">Ian</span>和爷爷坐着小船，<br>向一座神秘的小岛驶去。
+    </div>
+  </div>
+</div>
+
+<!-- Page 2: Grandpa explains -->
+<div class="page" data-page="2" style="background: linear-gradient(180deg, #1a3a5c, #0a1a2a);">
+  <img class="page-illustration" src="images/ch1-approaching-island.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble grandpa">
+      👴 "这座岛上有很多<span class="highlight">化石</span>（fossil），<br>也许能找到几百万年前的恐龙骨头！"
+    </div>
+  </div>
+</div>
+
+<!-- Page 3: Amber discovery -->
+<div class="page" data-page="3" style="background: linear-gradient(180deg, #3a2a1a, #1a0a0a);">
+  <img class="page-illustration" src="images/ch1-amber-discovery.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      在丛林深处，Ian发现了一块<br>金灿灿的<span class="highlight">琥珀</span>（amber）。
+    </div>
+  </div>
+</div>
+
+<!-- Page 4: Amber close-up -->
+<div class="page" data-page="4" style="background: linear-gradient(180deg, #3a2a1a, #1a0a0a);">
+  <img class="page-illustration" src="images/ch1-amber-discovery.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble character">
+      🧒 "爷爷快看！里面有一只虫子！<br>它被困在里面好久好久了吧？"
+    </div>
+  </div>
+</div>
+
+<!-- Page 5: Science - DNA -->
+<div class="page" data-page="5" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">🔬 科学时间</div>
+      <div style="margin-bottom: 0.8rem;">
+        🧬 每个生命体内都有一本"说明书"，叫做<span class="highlight">DNA</span>。
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        DNA告诉身体该长什么样子——<br>
+        高还是矮、什么颜色、长几条腿。
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        琥珀可以保存昆虫<span class="highlight-blue">几千万年</span>！<br>
+        但里面的DNA会慢慢碎掉……
+      </div>
+      <div>
+        🎬 电影里从琥珀里的蚊子血复活恐龙？<br>
+        <span class="highlight-red">其实做不到</span>——6500万年后DNA早就碎成渣了！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 6: Quiz - DNA -->
+<div class="page" data-page="6" style="background: linear-gradient(180deg, #0a2a1a, #0a1a0a);">
+  <div class="content-center">
+    <div class="quiz-box">
+      <div class="quiz-question">🧬 DNA是什么？</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="checkQ1(this, false)">A. 一种恐龙的食物</div>
+        <div class="quiz-option" onclick="checkQ1(this, true)">B. 生命体内的"说明书"</div>
+        <div class="quiz-option" onclick="checkQ1(this, false)">C. 一种很硬的石头</div>
+      </div>
+      <div class="quiz-feedback" id="fb-q1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 7: Weather signs - ants -->
+<div class="page" data-page="7" style="background: linear-gradient(180deg, #2a3a2a, #0a1a0a);">
+  <img class="page-illustration" src="images/ch1-weather-signs.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      就在这时，Ian注意到奇怪的事：<br>
+      <span class="highlight">蚂蚁</span>排着长队往高处搬家，<br>
+      <span class="highlight">鸟群</span>贴着地面低飞。
+    </div>
+  </div>
+</div>
+
+<!-- Page 8: Grandpa warns -->
+<div class="page" data-page="8" style="background: linear-gradient(180deg, #2a3a2a, #0a1a0a);">
+  <img class="page-illustration" src="images/ch1-weather-signs.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble grandpa">
+      👴 "Ian，这些是<span class="highlight">暴风雨的信号</span>！<br>
+      动物能感觉到<span class="highlight-blue">气压</span>（air pressure）下降——<br>
+      它们比天气预报还准！"
+    </div>
+  </div>
+</div>
+
+<!-- Page 9: Science - Weather -->
+<div class="page" data-page="9" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">🌤️ 自然信号</div>
+      <div style="margin-bottom: 0.8rem;">
+        🐜 蚂蚁搬家到高处 → 要下大雨了<br>
+        🐦 鸟群低飞 → 空气中水汽重，飞不高<br>
+        ☁️ 云变成<span class="highlight">铁砧形状</span>（anvil shape） → 积雨云，暴风雨来了！
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        <span class="highlight-blue">气压</span>就像空气的重量。<br>
+        暴风雨前气压会下降，动物的身体能感觉到！
+      </div>
+      <div>
+        ⚡ <span class="highlight">闪电小知识</span>：看到闪电后，开始数秒——<br>
+        每<span class="highlight">3秒</span>=闪电在<span class="highlight">1公里</span>外<br>
+        （因为光速比声速快太多了！）
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 10: Matching game - weather signs -->
+<div class="page" data-page="10" style="background: linear-gradient(180deg, #0a2a3a, #0a1a1a);">
+  <div class="content-center">
+    <div class="match-container">
+      <div class="match-instruction">🔗 把自然信号和含义连起来！</div>
+      <div class="match-grid">
+        <div class="match-left">
+          <div class="match-item" data-pair="a" onclick="selectMatch(this, 'left')">🐜 蚂蚁搬家</div>
+          <div class="match-item" data-pair="b" onclick="selectMatch(this, 'left')">⚡ 闪电后6秒听到雷</div>
+          <div class="match-item" data-pair="c" onclick="selectMatch(this, 'left')">🐦 鸟群低飞</div>
+        </div>
+        <div class="match-right">
+          <div class="match-item" data-pair="c" onclick="selectMatch(this, 'right')">空气水汽重</div>
+          <div class="match-item" data-pair="a" onclick="selectMatch(this, 'right')">要下大雨了</div>
+          <div class="match-item" data-pair="b" onclick="selectMatch(this, 'right')">闪电在2公里外</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 11: Storm hits -->
+<div class="page" data-page="11" style="background: linear-gradient(180deg, #1a1a2a, #0a0a1a);">
+  <img class="page-illustration" src="images/ch1-storm.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      暴风雨来了！天空被乌云吞没，<br>
+      闪电撕裂天空，雨水像瀑布一样倾泻。<br>
+      Ian紧紧抓住爷爷的手。
+    </div>
+  </div>
+</div>
+
+<!-- Page 12: Ground shakes -->
+<div class="page" data-page="12" style="background: linear-gradient(180deg, #1a1a2a, #0a0a1a);">
+  <img class="page-illustration" src="images/ch1-storm.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      突然——<span class="highlight-red">轰！</span><br>
+      不是雷声。地面在<span class="highlight">震动</span>。<br>
+      一棵大树被撞倒了——<br>
+      可是……附近没有什么东西啊？
+    </div>
+  </div>
+</div>
+
+<!-- Page 13: Silhouette -->
+<div class="page" data-page="13" style="background: linear-gradient(180deg, #0a0a1a, #000000);">
+  <img class="page-illustration" src="images/ch1-silhouette.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      闪电照亮了远处的树冠——<br>
+      一个<span class="highlight-red">巨大的影子</span>在树林间移动。<br>
+      那个轮廓……像是一只<span class="highlight">恐龙</span>？！
+    </div>
+  </div>
+</div>
+
+<!-- Page 14: Cliffhanger -->
+<div class="page" data-page="14" style="background: linear-gradient(180deg, #0a0a1a, #000000);">
+  <div class="content-center">
+    <div class="text-bubble character" style="font-size: clamp(1.3rem, 3.5vw, 1.8rem);">
+      🧒 "爷爷……那是什么？！"
+    </div>
+    <div class="text-bubble grandpa" style="margin-top: 1rem;">
+      👴 "不可能……它们应该灭绝了……"
+    </div>
+  </div>
+</div>
+
+<!-- Page 15: Summary -->
+<div class="page" data-page="15" style="background: linear-gradient(180deg, #0a0a2e, #1a1a3e);">
+  <div class="content-center">
+    <div class="science-panel" style="text-align: left;">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 1rem;">📚 你学到了什么</div>
+      <div style="margin-bottom: 0.5rem;">✅ <span class="highlight">DNA</span>是生命的"说明书"，但会随时间降解</div>
+      <div style="margin-bottom: 0.5rem;">✅ 动物能感知<span class="highlight-blue">气压变化</span>，预报天气</div>
+      <div style="margin-bottom: 0.5rem;">✅ 闪电后数3秒=1公里（<span class="highlight-green">光速</span>比声速快）</div>
+      <div>✅ <span class="highlight">琥珀</span>能保存昆虫百万年</div>
+    </div>
+    <div style="margin-top: 1.5rem;">
+      <a class="ch-link" href="ch2.html">🪶 下一章：羽毛猎手 →</a>
+    </div>
+    <div style="margin-top: 0.8rem;">
+      <a class="ch-link" href="index.html" style="background: rgba(255,255,255,0.15);">📖 目录</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const pages = document.querySelectorAll('.page');
+  let currentPage = 0;
+  const REWARD_KEY = 'jurassic_island_rewards';
+  let rewards = parseInt(localStorage.getItem(REWARD_KEY) || '0');
+  function updateRewardDisplay() { document.getElementById('reward-count').textContent = rewards; }
+  function addReward(n) {
+    rewards += n; localStorage.setItem(REWARD_KEY, rewards); updateRewardDisplay();
+    const c = document.querySelector('.reward-counter'); c.classList.add('pulse');
+    setTimeout(() => c.classList.remove('pulse'), 500);
+  }
+  updateRewardDisplay();
+  function showPage(n) {
+    if (n < 0 || n >= pages.length) return;
+    pages[currentPage].classList.remove('active');
+    pages[n].classList.add('active'); currentPage = n; updateDots();
+  }
+  function nextPage() { showPage(currentPage + 1); }
+  function prevPage() { showPage(currentPage - 1); }
+  const dotContainer = document.getElementById('page-counter');
+  pages.forEach((_, i) => { const d = document.createElement('div'); d.className = 'page-dot' + (i===0?' active':''); dotContainer.appendChild(d); });
+  function updateDots() { dotContainer.querySelectorAll('.page-dot').forEach((d,i) => d.classList.toggle('active', i===currentPage)); }
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => { const diff = touchStartX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) { diff > 0 ? nextPage() : prevPage(); } });
+  document.addEventListener('keydown', e => { if (e.key==='ArrowRight'||e.key===' ') nextPage(); if (e.key==='ArrowLeft') prevPage(); });
+
+  // Quiz Q1
+  function checkQ1(el, correct) {
+    if (el.classList.contains('disabled')) return;
+    el.parentElement.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+    if (correct) { el.classList.add('correct'); addReward(1); document.getElementById('fb-q1').textContent = '✅ 对了！DNA就是生命的说明书，告诉身体该怎么长！'; }
+    else { el.classList.add('wrong'); document.getElementById('fb-q1').textContent = '❌ 再想想？DNA藏在每个细胞里哦！'; }
+  }
+
+  // Matching game
+  let selectedLeft = null, selectedRight = null, matchCount = 0;
+  function selectMatch(el, side) {
+    if (el.classList.contains('matched')) return;
+    if (side === 'left') { if (selectedLeft) selectedLeft.classList.remove('selected'); selectedLeft = el; el.classList.add('selected'); }
+    else { if (selectedRight) selectedRight.classList.remove('selected'); selectedRight = el; el.classList.add('selected'); }
+    if (selectedLeft && selectedRight) {
+      if (selectedLeft.dataset.pair === selectedRight.dataset.pair) {
+        selectedLeft.classList.add('matched'); selectedRight.classList.add('matched'); matchCount++;
+        if (matchCount === 3) addReward(2);
+      } else {
+        selectedLeft.classList.add('wrong'); selectedRight.classList.add('wrong');
+        const l = selectedLeft, r = selectedRight;
+        setTimeout(() => { l.classList.remove('wrong','selected'); r.classList.remove('wrong','selected'); }, 500);
+        selectedLeft = selectedRight = null; return;
+      }
+      selectedLeft = selectedRight = null;
+    }
+  }
+</script>
+</body>
+</html>

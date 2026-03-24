@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>恐龙岛历险记 · 回家</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --text-primary: #f5f0e8;
+    --accent-warm: #ff6b35;
+    --accent-blue: #4ecdc4;
+    --accent-yellow: #ffe66d;
+    --accent-green: #a8e06c;
+    --accent-red: #ff6b6b;
+    --science-bg: rgba(30, 60, 114, 0.95);
+    --quiz-bg: rgba(20, 80, 60, 0.95);
+  }
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'ZCOOL KuaiLe', 'Ma Shan Zheng', sans-serif; background: #0a0a1a; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+  .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+  .page.active { display: flex; }
+  .page-illustration { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+  .content-bottom { position: absolute; bottom: 8%; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+  .content-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+  .text-bubble { max-width: 85%; padding: 1.2rem 1.5rem; border-radius: 20px; font-size: clamp(1.1rem, 3vw, 1.5rem); line-height: 1.8; text-align: center; margin: 0.5rem; }
+  .text-bubble.narrator { background: rgba(0, 0, 0, 0.75); color: var(--text-primary); border: 2px solid rgba(255, 255, 255, 0.1); }
+  .text-bubble.character { background: rgba(255, 107, 53, 0.85); color: white; border: 2px solid rgba(255, 255, 255, 0.2); }
+  .text-bubble.grandpa { background: rgba(100, 70, 40, 0.85); color: white; border: 2px solid rgba(255, 255, 255, 0.2); }
+  .science-panel { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: var(--science-bg); color: var(--text-primary); border: 2px solid rgba(78, 205, 196, 0.3); font-size: clamp(1rem, 2.8vw, 1.3rem); line-height: 1.8; }
+  .quiz-box { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: var(--quiz-bg); color: var(--text-primary); }
+  .quiz-question { font-size: clamp(1.1rem, 3vw, 1.4rem); margin-bottom: 1rem; text-align: center; line-height: 1.6; }
+  .quiz-options { display: flex; flex-direction: column; gap: 0.8rem; }
+  .quiz-option { padding: 0.8rem 1.2rem; border-radius: 16px; cursor: pointer; font-family: inherit; font-size: clamp(1rem, 2.5vw, 1.3rem); border: 3px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: var(--text-primary); text-align: center; transition: all 0.3s; }
+  .quiz-option:active { transform: scale(0.97); }
+  .quiz-option.correct { background: rgba(46, 204, 113, 0.3); border-color: #2ecc71; animation: correctPulse 0.5s ease; }
+  .quiz-option.wrong { background: rgba(231, 76, 60, 0.3); border-color: #e74c3c; animation: shake 0.5s ease; }
+  .quiz-option.disabled { pointer-events: none; opacity: 0.5; }
+  .quiz-feedback { margin-top: 0.8rem; text-align: center; font-size: clamp(0.9rem, 2.5vw, 1.2rem); }
+  .reward-counter { position: fixed; top: 1.5%; right: 1.5%; z-index: 200; background: rgba(0,0,0,0.6); padding: 0.4rem 0.8rem; border-radius: 20px; font-size: clamp(0.9rem, 2.5vw, 1.2rem); color: var(--accent-yellow); border: 2px solid rgba(255,230,109,0.3); transition: transform 0.3s; }
+  .reward-counter.pulse { transform: scale(1.3); }
+  .nav-area { position: fixed; top: 0; width: 15%; height: 100%; z-index: 50; display: flex; align-items: center; cursor: pointer; }
+  .nav-area.left { left: 0; justify-content: flex-start; }
+  .nav-area.right { right: 0; justify-content: flex-end; }
+  .nav-hint { font-size: 2rem; color: rgba(255,255,255,0.3); padding: 1rem; transition: color 0.3s; }
+  .nav-area:hover .nav-hint { color: rgba(255,255,255,0.7); }
+  .page-counter { position: fixed; bottom: 1.5%; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 8px; }
+  .page-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; }
+  .page-dot.active { background: var(--accent-yellow); transform: scale(1.3); }
+  .highlight { color: var(--accent-yellow); font-weight: bold; }
+  .highlight-blue { color: var(--accent-blue); }
+  .highlight-green { color: var(--accent-green); }
+  .highlight-red { color: var(--accent-red); }
+  .match-container { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: rgba(20, 60, 80, 0.95); color: var(--text-primary); }
+  .match-instruction { font-size: clamp(1rem, 2.8vw, 1.3rem); text-align: center; margin-bottom: 1rem; }
+  .match-grid { display: flex; justify-content: space-around; gap: 1rem; }
+  .match-left, .match-right { display: flex; flex-direction: column; gap: 0.6rem; }
+  .match-item { padding: 0.6rem 1rem; border-radius: 12px; border: 3px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); cursor: pointer; text-align: center; font-size: clamp(0.9rem, 2.5vw, 1.1rem); transition: all 0.3s; }
+  .match-item.selected { border-color: var(--accent-yellow); background: rgba(255,230,109,0.2); }
+  .match-item.matched { border-color: var(--accent-green); background: rgba(168,224,108,0.2); pointer-events: none; }
+  .match-item.wrong { border-color: var(--accent-red); animation: shake 0.5s ease; }
+  .ch-link { display: inline-block; margin-top: 0.5rem; padding: 0.8rem 2rem; background: var(--accent-warm); color: #fff; border-radius: 30px; text-decoration: none; font-size: 1.1em; transition: transform 0.2s; }
+  .ch-link:active { transform: scale(0.95); }
+  .total-bones { font-size: clamp(2rem, 5vw, 3rem); color: var(--accent-yellow); text-align: center; margin: 1rem 0; }
+  @keyframes correctPulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+</style>
+</head>
+<body>
+
+<div class="reward-counter">🦴 × <span id="reward-count">0</span></div>
+<div class="nav-area left" onclick="prevPage()"><div class="nav-hint">‹</div></div>
+<div class="nav-area right" onclick="nextPage()"><div class="nav-hint">›</div></div>
+<div class="page-counter" id="page-counter"></div>
+
+<!-- Page 0: Cover -->
+<div class="page active" data-page="0" style="background: linear-gradient(180deg, #1a2a3a, #0a0a0a);">
+  <div class="content-center">
+    <div style="font-size: clamp(2.5rem, 7vw, 4rem); color: var(--accent-yellow); text-shadow: 2px 2px 10px rgba(0,0,0,0.5);">
+      🏠 第六章
+    </div>
+    <div style="font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--text-primary); margin-top: 0.5rem;">
+      回家
+    </div>
+    <div style="font-size: clamp(0.9rem, 2.5vw, 1.1rem); color: rgba(255,255,255,0.5); margin-top: 1rem;">
+      鸟类起源 · 大灭绝 · 无线电通信
+    </div>
+  </div>
+</div>
+
+<!-- Page 1: Radio tower -->
+<div class="page" data-page="1" style="background: linear-gradient(180deg, #1a2a1a, #0a0a0a);">
+  <img class="page-illustration" src="images/ch6-radio-tower.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      终于！Ian看到了<span class="highlight">无线电塔</span>！<br>
+      但它被<span class="highlight-green">藤蔓</span>缠满了，<br>
+      设备锈迹斑斑。
+    </div>
+  </div>
+</div>
+
+<!-- Page 2: Feathered dinosaurs nesting -->
+<div class="page" data-page="2" style="background: linear-gradient(180deg, #1a2a1a, #0a0a0a);">
+  <img class="page-illustration" src="images/ch6-bird-dinosaurs.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      塔上筑满了<span class="highlight">鸟巢</span>——<br>
+      住着一群小型<span class="highlight-blue">长羽毛的恐龙</span>。<br>
+      它们有翅膀、有喙、会飞……
+    </div>
+    <div class="text-bubble character" style="margin-top: 0.3rem;">
+      🧒 "等等……它们看起来就像……<span class="highlight-red">鸟</span>？！"
+    </div>
+  </div>
+</div>
+
+<!-- Page 3: Science - Birds ARE dinosaurs -->
+<div class="page" data-page="3" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">🐦 科学时间：鸟就是恐龙！</div>
+      <div style="margin-bottom: 0.8rem;">
+        没错！<span class="highlight">鸟类就是恐龙的后代</span>！
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        1.5亿年前的<span class="highlight-blue">始祖鸟</span>（Archaeopteryx）<br>
+        既有恐龙的牙齿和爪子，<br>
+        又有鸟类的翅膀和羽毛——<br>
+        它就是<span class="highlight">过渡物种</span>！
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        经过漫长的进化：<br>
+        🦕 牙齿 → 变成了<span class="highlight-green">喙</span><br>
+        🦴 厚重的骨头 → 变成了<span class="highlight-green">中空的轻骨</span><br>
+        🪶 简单的羽毛 → 变成了能飞的<span class="highlight-green">飞羽</span>
+      </div>
+      <div>
+        所以科学家说：<br>
+        "<span class="highlight-red">恐龙没有完全灭绝——</span><br>
+        <span class="highlight">每一只鸟都是一只活着的恐龙！</span>"
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 4: Science - K-Pg extinction -->
+<div class="page" data-page="4" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">☄️ 大灭绝</div>
+      <div style="margin-bottom: 0.8rem;">
+        <span class="highlight-red">6600万年前</span>，一颗10公里宽的小行星<br>
+        撞击了地球（现在的墨西哥湾）。
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        撞击掀起的灰尘遮住了太阳好几年——<br>
+        没有阳光 → 植物死亡 → 食草动物饿死 →<br>
+        <span class="highlight-red">75%的物种灭绝</span>！
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        科学家怎么知道的？<br>
+        在全世界的岩层中，6600万年前那一层<br>
+        都有一种叫<span class="highlight-blue">铱</span>（iridium）的稀有金属——<br>
+        地球上很少，但<span class="highlight">小行星上很多</span>！
+      </div>
+      <div>
+        但小型的恐龙——<span class="highlight-green">鸟类的祖先</span>——<br>
+        因为体型小、食性杂，<span class="highlight">活了下来</span>！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 5: Ian's plan -->
+<div class="page" data-page="5" style="background: linear-gradient(180deg, #1a2a1a, #0a0a0a);">
+  <img class="page-illustration" src="images/ch6-radio-tower.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      Ian需要爬上无线电塔修好设备——<br>
+      但那些"鸟恐龙"不让他靠近！
+    </div>
+    <div class="text-bubble character" style="margin-top: 0.3rem;">
+      🧒 "它们是杂食动物……<br>
+      对了！<span class="highlight">背包里还有饼干</span>！"
+    </div>
+  </div>
+</div>
+
+<!-- Page 6: Lures them away -->
+<div class="page" data-page="6" style="background: linear-gradient(180deg, #1a2a1a, #0a0a0a);">
+  <img class="page-illustration" src="images/ch6-bird-dinosaurs.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      Ian把饼干捏碎，撒到远处的地上——<br>
+      小恐龙们叽叽喳喳地飞过去抢食！<br>
+      Ian趁机<span class="highlight-green">爬上了无线电塔</span>！
+    </div>
+  </div>
+</div>
+
+<!-- Page 7: Science - Radio waves -->
+<div class="page" data-page="7" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">📡 科学时间：无线电波</div>
+      <div style="margin-bottom: 0.8rem;">
+        世界上有很多看不见的<span class="highlight">"波"</span>：
+      </div>
+      <div style="margin-bottom: 0.5rem;">
+        🔊 <span class="highlight-blue">声波</span>：空气振动，让你听到声音<br>
+        💡 <span class="highlight-green">光波</span>：让你看到东西<br>
+        📡 <span class="highlight">无线电波</span>：能传很远，穿过墙壁和云层！
+      </div>
+      <div>
+        手机、WiFi、电视、GPS——<br>
+        都是用<span class="highlight-red">无线电波</span>来传递信息的！<br>
+        Ian修好无线电，<br>
+        就能把<span class="highlight">求救信号</span>发送到远方！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 8: Sends signal -->
+<div class="page" data-page="8" style="background: linear-gradient(180deg, #0a1a2a, #0a0a0a);">
+  <img class="page-illustration" src="images/ch6-radio-tower.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      Ian用力转动生锈的旋钮——<br>
+      <span class="highlight-red">"嗞——"</span>无线电活了！
+    </div>
+    <div class="text-bubble character" style="margin-top: 0.3rem;">
+      🧒 "SOS！SOS！这里是恐龙岛！<br>
+      我们需要救援！<span class="highlight">请回答</span>！"
+    </div>
+  </div>
+</div>
+
+<!-- Page 9: Quiz -->
+<div class="page" data-page="9" style="background: linear-gradient(180deg, #0a2a1a, #0a1a0a);">
+  <div class="content-center">
+    <div class="quiz-box">
+      <div class="quiz-question">🐦 下面哪句话是对的？</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="checkQuiz(this, false, 'fb-q1')">A. 恐龙在6600万年前全部灭绝了</div>
+        <div class="quiz-option" onclick="checkQuiz(this, true, 'fb-q1')">B. 鸟类就是恐龙的后代，恐龙没有完全灭绝</div>
+        <div class="quiz-option" onclick="checkQuiz(this, false, 'fb-q1')">C. 鸟和恐龙完全没有关系</div>
+      </div>
+      <div class="quiz-feedback" id="fb-q1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 10: Helicopter rescue -->
+<div class="page" data-page="10" style="background: linear-gradient(180deg, #2a3a4a, #0a1a2a);">
+  <img class="page-illustration" src="images/ch6-rescue.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      <span class="highlight-green">直升机来了！</span><br>
+      救援人员找到了爷爷，<br>
+      一起安全离开了恐龙岛。
+    </div>
+  </div>
+</div>
+
+<!-- Page 11: Looking back -->
+<div class="page" data-page="11" style="background: linear-gradient(180deg, #2a3a4a, #0a1a2a);">
+  <img class="page-illustration" src="images/ch6-rescue.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      直升机升起的时候，<br>
+      Ian回头望向小岛——<br>
+      树林之上，一条<span class="highlight">长长的脖子</span><br>
+      伸向天空。是<span class="highlight-blue">腕龙</span>。
+    </div>
+    <div class="text-bubble character" style="margin-top: 0.3rem;">
+      🧒 "再见了，大家伙们……"
+    </div>
+  </div>
+</div>
+
+<!-- Page 12: Home - sparrows -->
+<div class="page" data-page="12" style="background: linear-gradient(180deg, #3a3a2a, #1a1a0a);">
+  <div class="content-center">
+    <div class="text-bubble narrator" style="font-size: clamp(1.2rem, 3vw, 1.6rem);">
+      回到家后的一个早晨，<br>
+      Ian坐在窗边，看着外面的<span class="highlight">麻雀</span>跳来跳去。<br><br>
+      它们叽叽喳喳地叫着，<br>
+      抖动着小小的<span class="highlight-blue">羽毛</span>……<br><br>
+      Ian笑了——<br>
+      <span class="highlight-green">恐龙从来没有离开过。</span><br>
+      <span class="highlight">它们一直都在我们身边。</span> 🐦
+    </div>
+  </div>
+</div>
+
+<!-- Page 13: Matching - dinosaur to bird features -->
+<div class="page" data-page="13" style="background: linear-gradient(180deg, #0a2a3a, #0a1a1a);">
+  <div class="content-center">
+    <div class="match-container">
+      <div class="match-instruction">🔗 恐龙的特征怎样变成了鸟的特征？</div>
+      <div class="match-grid">
+        <div class="match-left">
+          <div class="match-item" data-pair="a" onclick="selectMatch(this, 'left')">🦷 恐龙的牙齿</div>
+          <div class="match-item" data-pair="b" onclick="selectMatch(this, 'left')">🦴 厚重的骨头</div>
+          <div class="match-item" data-pair="c" onclick="selectMatch(this, 'left')">🪶 简单的羽毛</div>
+        </div>
+        <div class="match-right">
+          <div class="match-item" data-pair="c" onclick="selectMatch(this, 'right')">能飞的飞羽 ✈️</div>
+          <div class="match-item" data-pair="a" onclick="selectMatch(this, 'right')">鸟喙 🐦</div>
+          <div class="match-item" data-pair="b" onclick="selectMatch(this, 'right')">中空的轻骨 🦴</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 14: Full book summary -->
+<div class="page" data-page="14" style="background: linear-gradient(180deg, #0a0a2e, #1a1a3e);">
+  <div class="content-center">
+    <div class="science-panel" style="text-align: left;">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 1rem;">📚 整本书你学到了什么</div>
+      <div style="margin-bottom: 0.4rem;">📖 第1章：<span class="highlight">DNA</span>、气压信号、闪电距离</div>
+      <div style="margin-bottom: 0.4rem;">📖 第2章：<span class="highlight-blue">群体狩猎</span>、自然选择、真实伶盗龙</div>
+      <div style="margin-bottom: 0.4rem;">📖 第3章：<span class="highlight-green">水循环</span>、食物链金字塔、动物领地</div>
+      <div style="margin-bottom: 0.4rem;">📖 第4章：<span class="highlight">风向与气味</span>、动物超级感官、霸王龙真相</div>
+      <div style="margin-bottom: 0.4rem;">📖 第5章：<span class="highlight-red">地球内部</span>、间歇泉、双冠龙真相</div>
+      <div>📖 第6章：<span class="highlight-blue">鸟=恐龙后代</span>、大灭绝、无线电波</div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 15: Final page with bone count -->
+<div class="page" data-page="15" style="background: linear-gradient(180deg, #1a1a3e, #0a0a2e);">
+  <div class="content-center">
+    <div style="text-align: center;">
+      <div style="font-size: clamp(1.5rem, 4vw, 2rem); color: var(--text-primary); margin-bottom: 1rem;">
+        🎉 恭喜你完成了<br><span class="highlight">恐龙岛历险记</span>！
+      </div>
+      <div class="total-bones">
+        🦴 你一共收集了 <span id="total-bones">0</span> 块化石骨头！
+      </div>
+      <div style="font-size: clamp(0.9rem, 2.5vw, 1.1rem); color: rgba(255,255,255,0.6); margin-bottom: 1.5rem;">
+        记住Ian学到的最重要的一课：<br>
+        <span class="highlight-green">观察、思考、行动</span>——<br>
+        这就是科学精神！
+      </div>
+      <a class="ch-link" href="index.html">📖 回到目录</a>
+      <div style="margin-top: 1rem;">
+        <a class="ch-link" href="ch1.html" style="background: rgba(255,255,255,0.15);">🔄 再读一遍</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const pages = document.querySelectorAll('.page');
+  let currentPage = 0;
+  const REWARD_KEY = 'jurassic_island_rewards';
+  let rewards = parseInt(localStorage.getItem(REWARD_KEY) || '0');
+  function updateRewardDisplay() {
+    document.getElementById('reward-count').textContent = rewards;
+    const tb = document.getElementById('total-bones');
+    if (tb) tb.textContent = rewards;
+  }
+  function addReward(n) {
+    rewards += n; localStorage.setItem(REWARD_KEY, rewards); updateRewardDisplay();
+    const c = document.querySelector('.reward-counter'); c.classList.add('pulse');
+    setTimeout(() => c.classList.remove('pulse'), 500);
+  }
+  updateRewardDisplay();
+  function showPage(n) {
+    if (n < 0 || n >= pages.length) return;
+    pages[currentPage].classList.remove('active');
+    pages[n].classList.add('active'); currentPage = n; updateDots(); updateRewardDisplay();
+  }
+  function nextPage() { showPage(currentPage + 1); }
+  function prevPage() { showPage(currentPage - 1); }
+  const dotContainer = document.getElementById('page-counter');
+  pages.forEach((_, i) => { const d = document.createElement('div'); d.className = 'page-dot' + (i===0?' active':''); dotContainer.appendChild(d); });
+  function updateDots() { dotContainer.querySelectorAll('.page-dot').forEach((d,i) => d.classList.toggle('active', i===currentPage)); }
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => { const diff = touchStartX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) { diff > 0 ? nextPage() : prevPage(); } });
+  document.addEventListener('keydown', e => { if (e.key==='ArrowRight'||e.key===' ') nextPage(); if (e.key==='ArrowLeft') prevPage(); });
+
+  // Quiz
+  function checkQuiz(el, correct, fbId) {
+    if (el.classList.contains('disabled')) return;
+    el.parentElement.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+    if (correct) { el.classList.add('correct'); addReward(1); document.getElementById(fbId).textContent = '✅ 对了！每一只鸟都是一只活着的恐龙后代！'; }
+    else { el.classList.add('wrong'); document.getElementById(fbId).textContent = '❌ 其实科学家已经证实了——鸟类就是恐龙进化来的！'; }
+  }
+
+  // Matching game
+  let selectedLeft = null, selectedRight = null, matchCount = 0;
+  function selectMatch(el, side) {
+    if (el.classList.contains('matched')) return;
+    if (side === 'left') { if (selectedLeft) selectedLeft.classList.remove('selected'); selectedLeft = el; el.classList.add('selected'); }
+    else { if (selectedRight) selectedRight.classList.remove('selected'); selectedRight = el; el.classList.add('selected'); }
+    if (selectedLeft && selectedRight) {
+      if (selectedLeft.dataset.pair === selectedRight.dataset.pair) {
+        selectedLeft.classList.add('matched'); selectedRight.classList.add('matched'); matchCount++;
+        if (matchCount === 3) addReward(2);
+      } else {
+        selectedLeft.classList.add('wrong'); selectedRight.classList.add('wrong');
+        const l = selectedLeft, r = selectedRight;
+        setTimeout(() => { l.classList.remove('wrong','selected'); r.classList.remove('wrong','selected'); }, 500);
+        selectedLeft = selectedRight = null; return;
+      }
+      selectedLeft = selectedRight = null;
+    }
+  }
+</script>
+</body>
+</html>

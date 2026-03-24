@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>恐龙岛历险记 · 巨人的河谷</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --text-primary: #f5f0e8;
+    --accent-warm: #ff6b35;
+    --accent-blue: #4ecdc4;
+    --accent-yellow: #ffe66d;
+    --accent-green: #a8e06c;
+    --accent-red: #ff6b6b;
+    --science-bg: rgba(30, 60, 114, 0.95);
+    --quiz-bg: rgba(20, 80, 60, 0.95);
+  }
+  html, body {
+    width: 100%; height: 100%; overflow: hidden;
+    font-family: 'ZCOOL KuaiLe', 'Ma Shan Zheng', sans-serif;
+    background: #0a0a1a;
+    touch-action: pan-y; -webkit-user-select: none; user-select: none;
+  }
+  .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+  .page.active { display: flex; }
+  .page-illustration { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+  .content-bottom { position: absolute; bottom: 8%; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+  .content-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+  .text-bubble { max-width: 85%; padding: 1.2rem 1.5rem; border-radius: 20px; font-size: clamp(1.1rem, 3vw, 1.5rem); line-height: 1.8; text-align: center; margin: 0.5rem; }
+  .text-bubble.narrator { background: rgba(0, 0, 0, 0.75); color: var(--text-primary); border: 2px solid rgba(255, 255, 255, 0.1); }
+  .text-bubble.character { background: rgba(255, 107, 53, 0.85); color: white; border: 2px solid rgba(255, 255, 255, 0.2); }
+  .text-bubble.grandpa { background: rgba(100, 70, 40, 0.85); color: white; border: 2px solid rgba(255, 255, 255, 0.2); }
+  .science-panel { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: var(--science-bg); color: var(--text-primary); border: 2px solid rgba(78, 205, 196, 0.3); font-size: clamp(1rem, 2.8vw, 1.3rem); line-height: 1.8; }
+  .quiz-box { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: var(--quiz-bg); color: var(--text-primary); }
+  .quiz-question { font-size: clamp(1.1rem, 3vw, 1.4rem); margin-bottom: 1rem; text-align: center; line-height: 1.6; }
+  .quiz-options { display: flex; flex-direction: column; gap: 0.8rem; }
+  .quiz-option { padding: 0.8rem 1.2rem; border-radius: 16px; cursor: pointer; font-family: inherit; font-size: clamp(1rem, 2.5vw, 1.3rem); border: 3px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: var(--text-primary); text-align: center; transition: all 0.3s; }
+  .quiz-option:active { transform: scale(0.97); }
+  .quiz-option.correct { background: rgba(46, 204, 113, 0.3); border-color: #2ecc71; animation: correctPulse 0.5s ease; }
+  .quiz-option.wrong { background: rgba(231, 76, 60, 0.3); border-color: #e74c3c; animation: shake 0.5s ease; }
+  .quiz-option.disabled { pointer-events: none; opacity: 0.5; }
+  .quiz-feedback { margin-top: 0.8rem; text-align: center; font-size: clamp(0.9rem, 2.5vw, 1.2rem); }
+  .reward-counter { position: fixed; top: 1.5%; right: 1.5%; z-index: 200; background: rgba(0,0,0,0.6); padding: 0.4rem 0.8rem; border-radius: 20px; font-size: clamp(0.9rem, 2.5vw, 1.2rem); color: var(--accent-yellow); border: 2px solid rgba(255,230,109,0.3); transition: transform 0.3s; }
+  .reward-counter.pulse { transform: scale(1.3); }
+  .nav-area { position: fixed; top: 0; width: 15%; height: 100%; z-index: 50; display: flex; align-items: center; cursor: pointer; }
+  .nav-area.left { left: 0; justify-content: flex-start; }
+  .nav-area.right { right: 0; justify-content: flex-end; }
+  .nav-hint { font-size: 2rem; color: rgba(255,255,255,0.3); padding: 1rem; transition: color 0.3s; }
+  .nav-area:hover .nav-hint { color: rgba(255,255,255,0.7); }
+  .page-counter { position: fixed; bottom: 1.5%; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 8px; }
+  .page-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; }
+  .page-dot.active { background: var(--accent-yellow); transform: scale(1.3); }
+  .highlight { color: var(--accent-yellow); font-weight: bold; }
+  .highlight-blue { color: var(--accent-blue); }
+  .highlight-green { color: var(--accent-green); }
+  .highlight-red { color: var(--accent-red); }
+  .match-container { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: rgba(20, 60, 80, 0.95); color: var(--text-primary); }
+  .match-instruction { font-size: clamp(1rem, 2.8vw, 1.3rem); text-align: center; margin-bottom: 1rem; }
+  .match-grid { display: flex; justify-content: space-around; gap: 1rem; }
+  .match-left, .match-right { display: flex; flex-direction: column; gap: 0.6rem; }
+  .match-item { padding: 0.6rem 1rem; border-radius: 12px; border: 3px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); cursor: pointer; text-align: center; font-size: clamp(0.9rem, 2.5vw, 1.1rem); transition: all 0.3s; }
+  .match-item.selected { border-color: var(--accent-yellow); background: rgba(255,230,109,0.2); }
+  .match-item.matched { border-color: var(--accent-green); background: rgba(168,224,108,0.2); pointer-events: none; }
+  .match-item.wrong { border-color: var(--accent-red); animation: shake 0.5s ease; }
+  .order-container { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: rgba(20, 60, 80, 0.95); color: var(--text-primary); }
+  .order-instruction { font-size: clamp(1rem, 2.8vw, 1.3rem); text-align: center; margin-bottom: 1rem; }
+  .order-items { display: flex; flex-direction: column; gap: 0.6rem; }
+  .order-item { padding: 0.8rem 1.2rem; border-radius: 12px; border: 3px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); cursor: pointer; text-align: center; font-size: clamp(1rem, 2.5vw, 1.2rem); transition: all 0.3s; }
+  .order-item.selected { border-color: var(--accent-yellow); background: rgba(255,230,109,0.2); }
+  .order-item.placed { border-color: var(--accent-green); background: rgba(168,224,108,0.2); pointer-events: none; }
+  .order-result { display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.8rem; min-height: 2rem; }
+  .order-placed-item { padding: 0.5rem 1rem; border-radius: 8px; background: rgba(168,224,108,0.3); text-align: center; font-size: clamp(0.9rem, 2.5vw, 1.1rem); }
+  .ch-link { display: inline-block; margin-top: 0.5rem; padding: 0.8rem 2rem; background: var(--accent-warm); color: #fff; border-radius: 30px; text-decoration: none; font-size: 1.1em; transition: transform 0.2s; }
+  .ch-link:active { transform: scale(0.95); }
+  @keyframes correctPulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+  @keyframes fadeIn { from{opacity:0;transform:translateY(20px)} to{opacity:1;transform:translateY(0)} }
+  .fade-in { animation: fadeIn 0.6s ease forwards; }
+</style>
+</head>
+<body>
+
+<div class="reward-counter">🦴 × <span id="reward-count">0</span></div>
+<div class="nav-area left" onclick="prevPage()"><div class="nav-hint">‹</div></div>
+<div class="nav-area right" onclick="nextPage()"><div class="nav-hint">›</div></div>
+<div class="page-counter" id="page-counter"></div>
+
+<!-- Page 0: Cover -->
+<div class="page active" data-page="0" style="background: linear-gradient(180deg, #1a3a2a, #0a0a0a);">
+  <div class="content-center">
+    <div style="font-size: clamp(2.5rem, 7vw, 4rem); color: var(--accent-yellow); text-shadow: 2px 2px 10px rgba(0,0,0,0.5);">
+      🦕 第三章
+    </div>
+    <div style="font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--text-primary); margin-top: 0.5rem;">
+      巨人的河谷
+    </div>
+    <div style="font-size: clamp(0.9rem, 2.5vw, 1.1rem); color: rgba(255,255,255,0.5); margin-top: 1rem;">
+      水循环 · 食物链 · 动物领地
+    </div>
+  </div>
+</div>
+
+<!-- Page 1: Ian alone -->
+<div class="page" data-page="1" style="background: linear-gradient(180deg, #1a3a2a, #0a1a0a);">
+  <img class="page-illustration" src="images/ch3-valley-giants.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      Ian独自前进。翻过一座小山丘后——<br>
+      眼前是一条<span class="highlight">宽阔的河谷</span>。<br>
+      而河边，站着他<span class="highlight-red">从未见过的巨大生物</span>。
+    </div>
+  </div>
+</div>
+
+<!-- Page 2: Brachiosaurus herd -->
+<div class="page" data-page="2" style="background: linear-gradient(180deg, #1a3a2a, #0a1a0a);">
+  <img class="page-illustration" src="images/ch3-valley-giants.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      一群<span class="highlight">腕龙</span>（Brachiosaurus）在喝水！<br>
+      它们有<span class="highlight-blue">26米长</span>——<br>
+      比<span class="highlight">六层楼</span>还高！
+    </div>
+    <div class="text-bubble character" style="margin-top: 0.3rem;">
+      🧒 "天哪……它们好大……"
+    </div>
+  </div>
+</div>
+
+<!-- Page 3: Baby brachio -->
+<div class="page" data-page="3" style="background: linear-gradient(180deg, #2a3a1a, #0a1a0a);">
+  <img class="page-illustration" src="images/ch3-baby-brachio.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      一只<span class="highlight">小腕龙</span>好奇地朝Ian走来——<br>
+      它虽然是"宝宝"，但已经有<span class="highlight-blue">3米高</span>了！<br>
+      它的大脚差点踩到Ian！
+    </div>
+  </div>
+</div>
+
+<!-- Page 4: Ian dodges -->
+<div class="page" data-page="4" style="background: linear-gradient(180deg, #2a3a1a, #0a1a0a);">
+  <img class="page-illustration" src="images/ch3-baby-brachio.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble character">
+      🧒 "哇！小心小心！"
+    </div>
+    <div class="text-bubble narrator" style="margin-top: 0.3rem;">
+      Ian赶紧翻滚躲开。<br>
+      小腕龙歪着脑袋看他——<br>
+      眼神充满了好奇，没有恶意。
+    </div>
+  </div>
+</div>
+
+<!-- Page 5: Parasaurolophus call -->
+<div class="page" data-page="5" style="background: linear-gradient(180deg, #1a2a3a, #0a1a1a);">
+  <img class="page-illustration" src="images/ch3-parasaurolophus.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      远处传来低沉的<span class="highlight-red">"呜——"</span>声。<br>
+      是一群<span class="highlight">副栉龙</span>（Parasaurolophus）！<br>
+      它们头上长长的<span class="highlight-blue">管状冠饰</span><br>
+      就像一把天然的<span class="highlight">法国号</span>！
+    </div>
+  </div>
+</div>
+
+<!-- Page 6: Science - Water cycle -->
+<div class="page" data-page="6" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">💧 科学时间：水循环</div>
+      <div style="margin-bottom: 0.8rem;">
+        为什么这么多恐龙都聚在河边？<br>
+        因为<span class="highlight">水</span>是所有生命的基础！
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        水在自然界不断循环：<br>
+        ☀️ 太阳加热水面 → 水<span class="highlight-blue">蒸发</span>变成水蒸气<br>
+        ☁️ 水蒸气升高变冷 → 变成<span class="highlight-blue">云</span><br>
+        🌧️ 云里的水滴太重 → 变成<span class="highlight-blue">雨</span>落下<br>
+        🏞️ 雨水汇成小溪 → 流进<span class="highlight-blue">河流</span>
+      </div>
+      <div>
+        这个过程<span class="highlight-green">永远不会停</span>！<br>
+        你喝的水，恐龙也许也喝过！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 7: Science - Food chain -->
+<div class="page" data-page="7" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">🔺 科学时间：食物链金字塔</div>
+      <div style="margin-bottom: 0.8rem;">
+        自然界的食物像一座<span class="highlight">金字塔</span>：
+      </div>
+      <div style="margin-bottom: 0.5rem; text-align: center;">
+        🌿 最底层：<span class="highlight-green">植物</span>（最多）<br>
+        🦕 中间层：<span class="highlight-blue">食草动物</span>（比较多）<br>
+        🦖 最顶层：<span class="highlight-red">食肉动物</span>（最少）
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        每升一层，数量减少<span class="highlight">10倍</span>！<br>
+        需要<span class="highlight-green">10吨植物</span>才能养活<span class="highlight-blue">1吨</span>食草恐龙，<br>
+        需要<span class="highlight-blue">10吨食草恐龙</span>才能养活<span class="highlight-red">1吨</span>食肉恐龙！
+      </div>
+      <div>
+        所以在这个河谷，你能看到<br>
+        <span class="highlight-green">很多很多</span>腕龙，但肉食恐龙<span class="highlight-red">很少</span>。
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 8: Quiz - Food chain -->
+<div class="page" data-page="8" style="background: linear-gradient(180deg, #0a2a1a, #0a1a0a);">
+  <div class="content-center">
+    <div class="quiz-box">
+      <div class="quiz-question">🔺 在食物链金字塔中，什么最多？</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="checkQuiz(this, false, 'fb-q1')">A. 食肉动物（霸王龙等）</div>
+        <div class="quiz-option" onclick="checkQuiz(this, true, 'fb-q1')">B. 植物（蕨类、树木等）</div>
+        <div class="quiz-option" onclick="checkQuiz(this, false, 'fb-q1')">C. 食草动物（腕龙等）</div>
+      </div>
+      <div class="quiz-feedback" id="fb-q1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 9: Interactive - Water cycle order -->
+<div class="page" data-page="9" style="background: linear-gradient(180deg, #0a2a3a, #0a1a1a);">
+  <div class="content-center">
+    <div class="order-container">
+      <div class="order-instruction">💧 按正确顺序排列水循环！（按顺序点击）</div>
+      <div class="order-items" id="order-items">
+        <div class="order-item" data-order="2" onclick="selectOrder(this)">☁️ 水蒸气变成云</div>
+        <div class="order-item" data-order="4" onclick="selectOrder(this)">🏞️ 雨水汇成河流</div>
+        <div class="order-item" data-order="1" onclick="selectOrder(this)">☀️ 太阳加热，水蒸发</div>
+        <div class="order-item" data-order="3" onclick="selectOrder(this)">🌧️ 云变成雨落下</div>
+      </div>
+      <div class="order-result" id="order-result"></div>
+      <div class="quiz-feedback" id="fb-order"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 10: Ian observes patterns -->
+<div class="page" data-page="10" style="background: linear-gradient(180deg, #1a3a2a, #0a1a0a);">
+  <img class="page-illustration" src="images/ch3-valley-giants.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      Ian仔细观察——腕龙群有<span class="highlight">固定的行走路线</span>！<br>
+      它们总是沿着河边同一条路走，<br>
+      就像马路上的汽车一样。
+    </div>
+  </div>
+</div>
+
+<!-- Page 11: Science - Territory -->
+<div class="page" data-page="11" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">🗺️ 科学时间：动物领地与习惯</div>
+      <div style="margin-bottom: 0.8rem;">
+        大多数动物都有<span class="highlight">固定的路线</span>和<span class="highlight">领地</span>：
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        🐘 大象每年走同一条<span class="highlight-blue">迁徙路线</span><br>
+        🐻 熊总是去同一条河里<span class="highlight-blue">抓鱼</span><br>
+        🦌 鹿群有固定的<span class="highlight-blue">喝水地点</span>
+      </div>
+      <div>
+        知道动物的习惯 = <span class="highlight-green">安全通行</span>！<br>
+        只要避开它们的路线，就不会撞上！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 12: Ian sneaks through -->
+<div class="page" data-page="12" style="background: linear-gradient(180deg, #2a3a1a, #0a1a0a);">
+  <img class="page-illustration" src="images/ch3-baby-brachio.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      Ian等腕龙群往北走后，<br>
+      沿着它们<span class="highlight">不走的小路</span>穿过了河谷！<br>
+      小腕龙回头看了他一眼，<br>
+      像是在说再见。
+    </div>
+    <div class="text-bubble character" style="margin-top: 0.3rem;">
+      🧒 "再见，大家伙！"
+    </div>
+  </div>
+</div>
+
+<!-- Page 13: Summary -->
+<div class="page" data-page="13" style="background: linear-gradient(180deg, #0a0a2e, #1a1a3e);">
+  <div class="content-center">
+    <div class="science-panel" style="text-align: left;">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 1rem;">📚 你学到了什么</div>
+      <div style="margin-bottom: 0.5rem;">✅ <span class="highlight">水循环</span>：蒸发→云→雨→河流，永不停歇</div>
+      <div style="margin-bottom: 0.5rem;">✅ <span class="highlight-blue">食物链金字塔</span>：植物最多，肉食动物最少（10:1）</div>
+      <div style="margin-bottom: 0.5rem;">✅ 副栉龙的<span class="highlight-green">头冠</span>是天然的乐器</div>
+      <div>✅ 观察动物的<span class="highlight">固定路线</span>可以安全通过</div>
+    </div>
+    <div style="margin-top: 1.5rem;">
+      <a class="ch-link" href="ch4.html">🌬️ 下一章：看不见的危险 →</a>
+    </div>
+    <div style="margin-top: 0.8rem;">
+      <a class="ch-link" href="index.html" style="background: rgba(255,255,255,0.15);">📖 目录</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const pages = document.querySelectorAll('.page');
+  let currentPage = 0;
+  const REWARD_KEY = 'jurassic_island_rewards';
+  let rewards = parseInt(localStorage.getItem(REWARD_KEY) || '0');
+  function updateRewardDisplay() { document.getElementById('reward-count').textContent = rewards; }
+  function addReward(n) {
+    rewards += n; localStorage.setItem(REWARD_KEY, rewards); updateRewardDisplay();
+    const c = document.querySelector('.reward-counter'); c.classList.add('pulse');
+    setTimeout(() => c.classList.remove('pulse'), 500);
+  }
+  updateRewardDisplay();
+  function showPage(n) {
+    if (n < 0 || n >= pages.length) return;
+    pages[currentPage].classList.remove('active');
+    pages[n].classList.add('active'); currentPage = n; updateDots();
+  }
+  function nextPage() { showPage(currentPage + 1); }
+  function prevPage() { showPage(currentPage - 1); }
+  const dotContainer = document.getElementById('page-counter');
+  pages.forEach((_, i) => { const d = document.createElement('div'); d.className = 'page-dot' + (i===0?' active':''); dotContainer.appendChild(d); });
+  function updateDots() { dotContainer.querySelectorAll('.page-dot').forEach((d,i) => d.classList.toggle('active', i===currentPage)); }
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => { const diff = touchStartX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) { diff > 0 ? nextPage() : prevPage(); } });
+  document.addEventListener('keydown', e => { if (e.key==='ArrowRight'||e.key===' ') nextPage(); if (e.key==='ArrowLeft') prevPage(); });
+
+  // Quiz
+  function checkQuiz(el, correct, fbId) {
+    if (el.classList.contains('disabled')) return;
+    el.parentElement.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+    if (correct) { el.classList.add('correct'); addReward(1); document.getElementById(fbId).textContent = '✅ 对了！植物是食物链的基础，数量最多！'; }
+    else { el.classList.add('wrong'); document.getElementById(fbId).textContent = '❌ 想想金字塔的底部是什么？最多的一定在最底层！'; }
+  }
+
+  // Water cycle ordering
+  let orderStep = 1, orderTotal = 4;
+  function selectOrder(el) {
+    if (el.classList.contains('placed')) return;
+    const order = parseInt(el.dataset.order);
+    if (order === orderStep) {
+      el.classList.add('placed');
+      const result = document.getElementById('order-result');
+      const item = document.createElement('div');
+      item.className = 'order-placed-item';
+      item.textContent = '第' + orderStep + '步：' + el.textContent;
+      result.appendChild(item);
+      orderStep++;
+      if (orderStep > orderTotal) {
+        addReward(2);
+        document.getElementById('fb-order').textContent = '✅ 太棒了！你掌握了水循环的顺序！';
+      }
+    } else {
+      el.classList.add('wrong');
+      setTimeout(() => el.classList.remove('wrong'), 500);
+      document.getElementById('fb-order').textContent = '❌ 顺序不对，再想想哪一步是第' + orderStep + '步？';
+    }
+  }
+</script>
+</body>
+</html>

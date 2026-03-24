@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>恐龙岛历险记 · 火山与生存</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&family=Ma+Shan+Zheng&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  :root {
+    --text-primary: #f5f0e8;
+    --accent-warm: #ff6b35;
+    --accent-blue: #4ecdc4;
+    --accent-yellow: #ffe66d;
+    --accent-green: #a8e06c;
+    --accent-red: #ff6b6b;
+    --science-bg: rgba(30, 60, 114, 0.95);
+    --quiz-bg: rgba(20, 80, 60, 0.95);
+  }
+  html, body { width: 100%; height: 100%; overflow: hidden; font-family: 'ZCOOL KuaiLe', 'Ma Shan Zheng', sans-serif; background: #0a0a1a; touch-action: pan-y; -webkit-user-select: none; user-select: none; }
+  .page { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: none; flex-direction: column; justify-content: center; align-items: center; overflow: hidden; }
+  .page.active { display: flex; }
+  .page-illustration { position: absolute; top: 0; left: 0; width: 100%; height: 100%; object-fit: cover; z-index: 1; }
+  .content-bottom { position: absolute; bottom: 8%; width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+  .content-center { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 100%; display: flex; flex-direction: column; align-items: center; z-index: 10; }
+  .text-bubble { max-width: 85%; padding: 1.2rem 1.5rem; border-radius: 20px; font-size: clamp(1.1rem, 3vw, 1.5rem); line-height: 1.8; text-align: center; margin: 0.5rem; }
+  .text-bubble.narrator { background: rgba(0, 0, 0, 0.75); color: var(--text-primary); border: 2px solid rgba(255, 255, 255, 0.1); }
+  .text-bubble.character { background: rgba(255, 107, 53, 0.85); color: white; border: 2px solid rgba(255, 255, 255, 0.2); }
+  .science-panel { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: var(--science-bg); color: var(--text-primary); border: 2px solid rgba(78, 205, 196, 0.3); font-size: clamp(1rem, 2.8vw, 1.3rem); line-height: 1.8; }
+  .quiz-box { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: var(--quiz-bg); color: var(--text-primary); }
+  .quiz-question { font-size: clamp(1.1rem, 3vw, 1.4rem); margin-bottom: 1rem; text-align: center; line-height: 1.6; }
+  .quiz-options { display: flex; flex-direction: column; gap: 0.8rem; }
+  .quiz-option { padding: 0.8rem 1.2rem; border-radius: 16px; cursor: pointer; font-family: inherit; font-size: clamp(1rem, 2.5vw, 1.3rem); border: 3px solid rgba(255,255,255,0.3); background: rgba(255,255,255,0.1); color: var(--text-primary); text-align: center; transition: all 0.3s; }
+  .quiz-option:active { transform: scale(0.97); }
+  .quiz-option.correct { background: rgba(46, 204, 113, 0.3); border-color: #2ecc71; animation: correctPulse 0.5s ease; }
+  .quiz-option.wrong { background: rgba(231, 76, 60, 0.3); border-color: #e74c3c; animation: shake 0.5s ease; }
+  .quiz-option.disabled { pointer-events: none; opacity: 0.5; }
+  .quiz-feedback { margin-top: 0.8rem; text-align: center; font-size: clamp(0.9rem, 2.5vw, 1.2rem); }
+  .reward-counter { position: fixed; top: 1.5%; right: 1.5%; z-index: 200; background: rgba(0,0,0,0.6); padding: 0.4rem 0.8rem; border-radius: 20px; font-size: clamp(0.9rem, 2.5vw, 1.2rem); color: var(--accent-yellow); border: 2px solid rgba(255,230,109,0.3); transition: transform 0.3s; }
+  .reward-counter.pulse { transform: scale(1.3); }
+  .nav-area { position: fixed; top: 0; width: 15%; height: 100%; z-index: 50; display: flex; align-items: center; cursor: pointer; }
+  .nav-area.left { left: 0; justify-content: flex-start; }
+  .nav-area.right { right: 0; justify-content: flex-end; }
+  .nav-hint { font-size: 2rem; color: rgba(255,255,255,0.3); padding: 1rem; transition: color 0.3s; }
+  .nav-area:hover .nav-hint { color: rgba(255,255,255,0.7); }
+  .page-counter { position: fixed; bottom: 1.5%; left: 50%; transform: translateX(-50%); z-index: 100; display: flex; gap: 8px; }
+  .page-dot { width: 10px; height: 10px; border-radius: 50%; background: rgba(255,255,255,0.3); transition: all 0.3s; }
+  .page-dot.active { background: var(--accent-yellow); transform: scale(1.3); }
+  .highlight { color: var(--accent-yellow); font-weight: bold; }
+  .highlight-blue { color: var(--accent-blue); }
+  .highlight-green { color: var(--accent-green); }
+  .highlight-red { color: var(--accent-red); }
+  .geyser-game { max-width: 90%; padding: 1.5rem; border-radius: 20px; background: rgba(60, 20, 10, 0.95); color: var(--text-primary); text-align: center; }
+  .geyser-bar { width: 80%; height: 30px; background: rgba(255,255,255,0.1); border-radius: 15px; margin: 1rem auto; overflow: hidden; position: relative; }
+  .geyser-fill { height: 100%; border-radius: 15px; transition: width 0.1s linear; }
+  .geyser-btn { padding: 1rem 2rem; border-radius: 20px; border: 3px solid var(--accent-warm); background: rgba(255,107,53,0.3); color: white; font-family: inherit; font-size: clamp(1.1rem, 3vw, 1.4rem); cursor: pointer; transition: all 0.2s; }
+  .geyser-btn:active { transform: scale(0.95); }
+  .geyser-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .ch-link { display: inline-block; margin-top: 0.5rem; padding: 0.8rem 2rem; background: var(--accent-warm); color: #fff; border-radius: 30px; text-decoration: none; font-size: 1.1em; transition: transform 0.2s; }
+  .ch-link:active { transform: scale(0.95); }
+  @keyframes correctPulse { 0%{transform:scale(1)} 50%{transform:scale(1.05)} 100%{transform:scale(1)} }
+  @keyframes shake { 0%,100%{transform:translateX(0)} 25%{transform:translateX(-8px)} 75%{transform:translateX(8px)} }
+</style>
+</head>
+<body>
+
+<div class="reward-counter">🦴 × <span id="reward-count">0</span></div>
+<div class="nav-area left" onclick="prevPage()"><div class="nav-hint">‹</div></div>
+<div class="nav-area right" onclick="nextPage()"><div class="nav-hint">›</div></div>
+<div class="page-counter" id="page-counter"></div>
+
+<!-- Page 0: Cover -->
+<div class="page active" data-page="0" style="background: linear-gradient(180deg, #3a1a0a, #0a0a0a);">
+  <div class="content-center">
+    <div style="font-size: clamp(2.5rem, 7vw, 4rem); color: var(--accent-yellow); text-shadow: 2px 2px 10px rgba(0,0,0,0.5);">
+      🌋 第五章
+    </div>
+    <div style="font-size: clamp(1.8rem, 5vw, 2.5rem); color: var(--text-primary); margin-top: 0.5rem;">
+      火山与生存
+    </div>
+    <div style="font-size: clamp(0.9rem, 2.5vw, 1.1rem); color: rgba(255,255,255,0.5); margin-top: 1rem;">
+      地球内部 · 间歇泉 · 双冠龙真相
+    </div>
+  </div>
+</div>
+
+<!-- Page 1: Geothermal canyon -->
+<div class="page" data-page="1" style="background: linear-gradient(180deg, #3a1a0a, #1a0a0a);">
+  <img class="page-illustration" src="images/ch5-geothermal.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      Ian走进了一条<span class="highlight-red">火山峡谷</span>——<br>
+      地面是温暖的！蒸汽从岩石缝里冒出来，<br>
+      远处有<span class="highlight-blue">温泉</span>和<span class="highlight">间歇泉</span>。
+    </div>
+  </div>
+</div>
+
+<!-- Page 2: Warm ground -->
+<div class="page" data-page="2" style="background: linear-gradient(180deg, #3a1a0a, #1a0a0a);">
+  <img class="page-illustration" src="images/ch5-geothermal.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble character">
+      🧒 "好暖和！地面像有暖气一样……<br>
+      难怪这里的植物比外面还茂盛！"
+    </div>
+  </div>
+</div>
+
+<!-- Page 3: Dilophosaurus appears -->
+<div class="page" data-page="3" style="background: linear-gradient(180deg, #2a1a0a, #0a0a0a);">
+  <img class="page-illustration" src="images/ch5-dilophosaurus.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      峡谷的另一端，一只<span class="highlight-red">6米长</span>的恐龙<br>
+      挡住了去路！它头上有<br>
+      两道醒目的<span class="highlight">骨质冠饰</span>——<br>
+      是<span class="highlight-blue">双冠龙</span>（Dilophosaurus）！
+    </div>
+  </div>
+</div>
+
+<!-- Page 4: Movie vs Real - Dilophosaurus -->
+<div class="page" data-page="4" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel" style="background: rgba(80, 20, 60, 0.9);">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">🎬 电影 vs 真实：双冠龙</div>
+      <div style="margin-bottom: 0.8rem;">
+        ❌ 电影里的双冠龙：<span class="highlight-red">小个子</span>、<br>
+        脖子上有<span class="highlight-red">皱褶</span>、会<span class="highlight-red">喷毒液</span><br>
+        ——这些<span class="highlight-red">全是编的</span>！
+      </div>
+      <div>
+        ✅ 真正的双冠龙：<span class="highlight-green">6米长</span>的大型肉食恐龙！<br>
+        头上的<span class="highlight">双冠</span>是用来<span class="highlight-blue">展示</span>和<span class="highlight-blue">辨认同伴</span>的，<br>
+        没有皱褶，没有毒液，<br>
+        但它跑得<span class="highlight-green">非常快</span>，是早期侏罗纪的顶级猎手！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 5: Science - Earth interior -->
+<div class="page" data-page="5" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">🌍 科学时间：地球的内部</div>
+      <div style="margin-bottom: 0.8rem;">
+        地球就像一个<span class="highlight">煮熟的鸡蛋</span>：
+      </div>
+      <div style="margin-bottom: 0.5rem; text-align: center;">
+        🥚 <span class="highlight-blue">地壳</span>（蛋壳）：最薄，我们住在上面<br>
+        🟠 <span class="highlight-warm">地幔</span>（蛋白）：很厚，岩浆在这里缓慢流动<br>
+        🔴 <span class="highlight-red">地核</span>（蛋黄）：超级热！温度达6000°C！
+      </div>
+      <div style="margin-bottom: 0.8rem;">
+        <span class="highlight">火山</span>就是地壳上的"裂缝"——<br>
+        地幔里的岩浆通过裂缝涌出来！
+      </div>
+      <div>
+        <span class="highlight-blue">温泉</span>：地下水被岩浆加热后冒出来<br>
+        <span class="highlight-green">间歇泉</span>：水加热→压力增大→喷发→冷却→重复！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 6: Science - Why dinosaurs survived here -->
+<div class="page" data-page="6" style="background: linear-gradient(180deg, #0a1a3a, #0a0a2e);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">🏝️ 为什么这座岛上还有恐龙？</div>
+      <div style="margin-bottom: 0.8rem;">
+        6600万年前，小行星撞击地球，<br>
+        灰尘遮住了太阳，地球变得又冷又暗。<br>
+        大部分恐龙都灭绝了。
+      </div>
+      <div>
+        但这座岛有<span class="highlight-red">火山地热</span>！<br>
+        地热像一个天然的<span class="highlight">暖房</span>——<br>
+        即使外面冰天雪地，<br>
+        岛上依然<span class="highlight-green">温暖如春</span>。<br>
+        恐龙在这个<span class="highlight-blue">密封的生态系统</span>里<br>
+        活了下来！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 7: Quiz - Earth layers -->
+<div class="page" data-page="7" style="background: linear-gradient(180deg, #0a2a1a, #0a1a0a);">
+  <div class="content-center">
+    <div class="quiz-box">
+      <div class="quiz-question">🌍 地球最中心（地核）的温度大约是？</div>
+      <div class="quiz-options">
+        <div class="quiz-option" onclick="checkQuiz(this, false, 'fb-q1')">A. 100°C（开水的温度）</div>
+        <div class="quiz-option" onclick="checkQuiz(this, false, 'fb-q1')">B. 1000°C</div>
+        <div class="quiz-option" onclick="checkQuiz(this, true, 'fb-q1')">C. 6000°C（比太阳表面还热！）</div>
+      </div>
+      <div class="quiz-feedback" id="fb-q1"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 8: Geyser observation -->
+<div class="page" data-page="8" style="background: linear-gradient(180deg, #3a1a0a, #1a0a0a);">
+  <img class="page-illustration" src="images/ch5-geyser-escape.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      双冠龙朝Ian走来！<br>
+      但Ian注意到峡谷中间有一个<span class="highlight">间歇泉</span>——<br>
+      每隔一段时间就喷出巨大的<span class="highlight-blue">蒸汽柱</span>！
+    </div>
+    <div class="text-bubble character" style="margin-top: 0.3rem;">
+      🧒 "1、2、3……喷了！<br>
+      1、2、3……又喷了！<br>
+      每<span class="highlight">20秒</span>喷一次！"
+    </div>
+  </div>
+</div>
+
+<!-- Page 9: Escape through steam -->
+<div class="page" data-page="9" style="background: linear-gradient(180deg, #3a1a0a, #1a0a0a);">
+  <img class="page-illustration" src="images/ch5-geyser-escape.png" alt="" onerror="this.style.display='none'">
+  <div class="content-bottom">
+    <div class="text-bubble narrator">
+      Ian等间歇泉喷发的瞬间<span class="highlight-red">冲了过去</span>——<br>
+      巨大的蒸汽遮住了双冠龙的视线！<br>
+      等蒸汽散去，Ian已经在<span class="highlight-green">另一边</span>了！
+    </div>
+  </div>
+</div>
+
+<!-- Page 10: Interactive - Geyser timing game -->
+<div class="page" data-page="10" style="background: linear-gradient(180deg, #2a0a0a, #0a0a0a);">
+  <div class="content-center">
+    <div class="geyser-game">
+      <div style="font-size: 1.3em; margin-bottom: 0.5rem;">🌋 间歇泉时机游戏</div>
+      <div style="font-size: clamp(0.9rem, 2.5vw, 1.1rem); margin-bottom: 0.8rem;">
+        观察间歇泉的节奏，在它<span class="highlight">喷发的瞬间</span>点击"冲！"
+      </div>
+      <div class="geyser-bar">
+        <div class="geyser-fill" id="geyser-fill" style="width: 0%; background: linear-gradient(90deg, #4ecdc4, #ff6b35);"></div>
+      </div>
+      <div id="geyser-status" style="font-size: clamp(1rem, 2.8vw, 1.3rem); margin: 0.5rem 0;">
+        💨 观察节奏……
+      </div>
+      <button class="geyser-btn" id="geyser-btn" onclick="geyserRush()">冲！🏃</button>
+      <div class="quiz-feedback" id="fb-geyser"></div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 11: Science reflection -->
+<div class="page" data-page="11" style="background: linear-gradient(180deg, #1a1a2a, #0a0a0a);">
+  <div class="content-center">
+    <div class="science-panel">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 0.8rem;">💡 观察→计时→预测</div>
+      <div>
+        Ian用的方法就是<span class="highlight">科学方法</span>！<br><br>
+        1️⃣ <span class="highlight-blue">观察</span>：间歇泉有规律地喷发<br>
+        2️⃣ <span class="highlight-green">计时</span>：发现每20秒喷一次<br>
+        3️⃣ <span class="highlight">预测</span>：知道下一次什么时候喷<br><br>
+        这就是科学——<br>
+        <span class="highlight-red">找到规律，预测未来</span>！
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Page 12: Summary -->
+<div class="page" data-page="12" style="background: linear-gradient(180deg, #0a0a2e, #1a1a3e);">
+  <div class="content-center">
+    <div class="science-panel" style="text-align: left;">
+      <div style="text-align: center; font-size: 1.3em; margin-bottom: 1rem;">📚 你学到了什么</div>
+      <div style="margin-bottom: 0.5rem;">✅ 地球分三层：<span class="highlight">地壳</span>、地幔、<span class="highlight-red">地核</span>（6000°C）</div>
+      <div style="margin-bottom: 0.5rem;">✅ 真正的双冠龙<span class="highlight-green">6米长</span>，没有皱褶，不会喷毒</div>
+      <div style="margin-bottom: 0.5rem;">✅ <span class="highlight-blue">间歇泉</span>：加热→压力→喷发→冷却→重复</div>
+      <div>✅ 科学方法：<span class="highlight">观察→计时→预测</span></div>
+    </div>
+    <div style="margin-top: 1.5rem;">
+      <a class="ch-link" href="ch6.html">🏠 下一章：回家 →</a>
+    </div>
+    <div style="margin-top: 0.8rem;">
+      <a class="ch-link" href="index.html" style="background: rgba(255,255,255,0.15);">📖 目录</a>
+    </div>
+  </div>
+</div>
+
+<script>
+  const pages = document.querySelectorAll('.page');
+  let currentPage = 0;
+  const REWARD_KEY = 'jurassic_island_rewards';
+  let rewards = parseInt(localStorage.getItem(REWARD_KEY) || '0');
+  function updateRewardDisplay() { document.getElementById('reward-count').textContent = rewards; }
+  function addReward(n) {
+    rewards += n; localStorage.setItem(REWARD_KEY, rewards); updateRewardDisplay();
+    const c = document.querySelector('.reward-counter'); c.classList.add('pulse');
+    setTimeout(() => c.classList.remove('pulse'), 500);
+  }
+  updateRewardDisplay();
+  function showPage(n) {
+    if (n < 0 || n >= pages.length) return;
+    pages[currentPage].classList.remove('active');
+    pages[n].classList.add('active'); currentPage = n; updateDots();
+  }
+  function nextPage() { showPage(currentPage + 1); }
+  function prevPage() { showPage(currentPage - 1); }
+  const dotContainer = document.getElementById('page-counter');
+  pages.forEach((_, i) => { const d = document.createElement('div'); d.className = 'page-dot' + (i===0?' active':''); dotContainer.appendChild(d); });
+  function updateDots() { dotContainer.querySelectorAll('.page-dot').forEach((d,i) => d.classList.toggle('active', i===currentPage)); }
+  let touchStartX = 0;
+  document.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; });
+  document.addEventListener('touchend', e => { const diff = touchStartX - e.changedTouches[0].clientX; if (Math.abs(diff) > 50) { diff > 0 ? nextPage() : prevPage(); } });
+  document.addEventListener('keydown', e => { if (e.key==='ArrowRight'||e.key===' ') nextPage(); if (e.key==='ArrowLeft') prevPage(); });
+
+  // Quiz
+  function checkQuiz(el, correct, fbId) {
+    if (el.classList.contains('disabled')) return;
+    el.parentElement.querySelectorAll('.quiz-option').forEach(o => o.classList.add('disabled'));
+    if (correct) { el.classList.add('correct'); addReward(1); document.getElementById(fbId).textContent = '✅ 对了！地核温度高达6000°C，比太阳表面还热！'; }
+    else { el.classList.add('wrong'); document.getElementById(fbId).textContent = '❌ 地核可比这热多了！想想——它能把岩石都融化！'; }
+  }
+
+  // Geyser timing game
+  let geyserPhase = 0, geyserInterval = null, geyserRewarded = false;
+  function startGeyser() {
+    const fill = document.getElementById('geyser-fill');
+    const status = document.getElementById('geyser-status');
+    let t = 0;
+    geyserInterval = setInterval(() => {
+      t += 50;
+      const cycle = t % 4000; // 4 second cycle
+      const pct = (cycle / 4000) * 100;
+      fill.style.width = pct + '%';
+      if (cycle < 800) {
+        geyserPhase = 1; // erupting
+        fill.style.background = 'linear-gradient(90deg, #ff6b35, #ff6b6b)';
+        status.textContent = '🌋 喷发中！！！';
+      } else {
+        geyserPhase = 0; // charging
+        fill.style.background = 'linear-gradient(90deg, #4ecdc4, #ff6b35)';
+        status.textContent = '💨 蓄力中……';
+      }
+    }, 50);
+  }
+  function geyserRush() {
+    if (geyserPhase === 1) {
+      document.getElementById('fb-geyser').textContent = '✅ 太棒了！你抓住了喷发的时机冲了过去！';
+      if (!geyserRewarded) { addReward(2); geyserRewarded = true; }
+      document.getElementById('geyser-btn').disabled = true;
+    } else {
+      document.getElementById('fb-geyser').textContent = '❌ 还没喷发呢！等蒸汽柱出现再冲！';
+    }
+  }
+  // Start geyser when page 10 is shown
+  const observer = new MutationObserver(() => {
+    const p10 = document.querySelector('[data-page="10"]');
+    if (p10 && p10.classList.contains('active') && !geyserInterval) startGeyser();
+  });
+  document.querySelectorAll('.page').forEach(p => observer.observe(p, { attributes: true, attributeFilter: ['class'] }));
+</script>
+</body>
+</html>

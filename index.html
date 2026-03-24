@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🦕 恐龙岛历险记</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=ZCOOL+KuaiLe&display=swap');
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'ZCOOL KuaiLe', sans-serif;
+    background: linear-gradient(180deg, #1a3a2a, #0a1a0a);
+    min-height: 100vh; color: #f5f0e8;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 2rem 1rem;
+  }
+  h1 {
+    font-size: clamp(2rem, 5vw, 3rem); margin-bottom: 0.5rem;
+    color: #ffe66d; text-shadow: 2px 2px 10px rgba(0,0,0,0.5);
+  }
+  .subtitle { opacity: 0.7; margin-bottom: 0.5rem; font-size: 1.1rem; }
+  .age-tag { opacity: 0.5; margin-bottom: 2rem; font-size: 0.9rem; }
+  .chapter-list { width: 100%; max-width: 500px; }
+  .chapter-card {
+    display: block; padding: 1.2rem 1.5rem; margin-bottom: 1rem;
+    background: rgba(255,255,255,0.08); border-radius: 16px;
+    border: 2px solid rgba(255,255,255,0.1); color: #f5f0e8;
+    text-decoration: none; transition: all 0.3s;
+    font-size: clamp(1rem, 3vw, 1.2rem);
+  }
+  .chapter-card:hover { background: rgba(255,255,255,0.15); transform: translateX(5px); }
+  .chapter-num { color: #ffe66d; margin-right: 0.5rem; }
+  .chapter-desc { display: block; font-size: 0.85em; opacity: 0.6; margin-top: 0.3rem; }
+</style>
+</head>
+<body>
+  <h1>🦕 恐龙岛历险记</h1>
+  <div class="subtitle">和Ian一起用科学知识在恐龙岛上生存！</div>
+  <div class="age-tag">适合 6-8 岁 · 互动科学绘本</div>
+  <div class="chapter-list">
+    <a class="chapter-card" href="ch1.html">
+      <span class="chapter-num">第一章</span> ⛈️ 暴风雨来了
+      <span class="chapter-desc">天气信号 · 闪电与雷声 · 气压变化</span>
+    </a>
+    <a class="chapter-card" href="ch2.html">
+      <span class="chapter-num">第二章</span> 🪶 羽毛猎手
+      <span class="chapter-desc">真实的伶盗龙 · 群体狩猎 · 动物惧火</span>
+    </a>
+    <a class="chapter-card" href="ch3.html">
+      <span class="chapter-num">第三章</span> 🌊 巨人的河谷
+      <span class="chapter-desc">水循环 · 食物链 · 动物习性</span>
+    </a>
+    <a class="chapter-card" href="ch4.html">
+      <span class="chapter-num">第四章</span> 👁️ 看不见的危险
+      <span class="chapter-desc">风向与气味 · 动物感官 · 霸王龙真相</span>
+    </a>
+    <a class="chapter-card" href="ch5.html">
+      <span class="chapter-num">第五章</span> 🌋 火山与生存
+      <span class="chapter-desc">地球内部 · 地热与温泉 · 间歇泉</span>
+    </a>
+    <a class="chapter-card" href="ch6.html">
+      <span class="chapter-num">第六章</span> 🐦 回家
+      <span class="chapter-desc">鸟类=恐龙后代 · 演化 · 生命延续</span>
+    </a>
+  </div>
+</body>
+</html>
